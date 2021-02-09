@@ -4,9 +4,7 @@ const nil = -1;
 export default function findMatching(
   m: number, // number of nodes U
   n: number, // number of nodes V
-  edges: [number, number][], // edges between U and V
-  seed: number = 0,
-  groups: number[] = new Array(n).fill(0) // groups which nodes V belong to. The algorithm tries to maximize cardinality of chosen groups.
+  edges: [number, number][] // edges between U and V
 ): [number, number][] {
   const adj: number[][] = new Array(m).fill(undefined).map(() => []);
   edges.forEach(([u, v]) => {
@@ -15,7 +13,7 @@ export default function findMatching(
 
   const uPair = new Int32Array(m).fill(nil);
   const vPair = new Int32Array(n).fill(nil);
-  const dists = new Int32Array(m + 1).fill(nil);
+  const dists = new Int32Array(m + 1);
 
   const bfs = () => {
     const queue: number[] = [];
@@ -41,11 +39,11 @@ export default function findMatching(
     return dists[nil + 1] !== inf;
   };
 
-  const dfs = (u: number) => {
+  const dfs = (u: number, v?: number) => {
     if (u !== nil) {
-      for (const v of adj[u]) {
+      for (const v of shuffle(adj[u])) {
         if (dists[vPair[v] + 1] === dists[u + 1] + 1) {
-          if (dfs(vPair[v])) {
+          if (dfs(vPair[v], v)) {
             vPair[v] = u;
             uPair[u] = v;
             return true;
@@ -60,7 +58,7 @@ export default function findMatching(
 
   let matching = 0;
   while (bfs()) {
-    for (let u = 0; u < m; u++) {
+    for (const u of shuffle(Array(m).keys())) {
       if (uPair[u] === nil) {
         if (dfs(u)) {
           matching += 1;
@@ -73,3 +71,12 @@ export default function findMatching(
     .map((v, u) => [u, v])
     .filter(([u, v]) => v !== nil) as [number, number][];
 }
+
+const shuffle = <T>(iter: Iterable<T>): T[] => {
+  const array = [...iter];
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+};
