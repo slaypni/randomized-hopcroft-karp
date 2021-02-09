@@ -1,7 +1,7 @@
 {
   "name": "randomized-hopcroft-karp",
   "description": "An algorithm for maximum cardinality matching of bipartite graph",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "author": {
     "name": "Kazuaki Tanida",
     "url": "https://github.com/slaypni"
