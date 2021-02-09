@@ -4,8 +4,13 @@ const nil = -1;
 export default function findMatching(
   m: number, // number of nodes U
   n: number, // number of nodes V
-  edges: [number, number][] // edges between U and V
+  edges: [number, number][], // edges between U and V
+  groups: number[] = new Array(n).fill(0) // groups which nodes V belong to. The algorithm tries to maximize cardinality of chosen groups.
 ): [number, number][] {
+  const card = Object.fromEntries(groups.map((v) => [v, 0]));
+  const compareByGroupCardinality = (v1: number, v2: number) =>
+    card[groups[v1]] - card[groups[v2]];
+
   const adj: number[][] = new Array(m).fill(undefined).map(() => []);
   edges.forEach(([u, v]) => {
     adj[u].push(v);
@@ -41,7 +46,7 @@ export default function findMatching(
 
   const dfs = (u: number, v?: number) => {
     if (u !== nil) {
-      for (const v of shuffle(adj[u])) {
+      for (const v of shuffle(adj[u]).sort(compareByGroupCardinality)) {
         if (dists[vPair[v] + 1] === dists[u + 1] + 1) {
           if (dfs(vPair[v], v)) {
             vPair[v] = u;
@@ -53,6 +58,7 @@ export default function findMatching(
       dists[u + 1] = inf;
       return false;
     }
+    card[groups[v!]] += 1;
     return true;
   };
 
