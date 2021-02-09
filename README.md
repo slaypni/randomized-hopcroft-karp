@@ -12,13 +12,15 @@ npm install randomized-hopcroft-karp
 function findMatching(
   m: number,
   n: number,
-  edges: [number, number][]
+  edges: [number, number][],
+  groups?: number[]
 ): [number, number][];
 ```
 
-- `m`: number of nodes U
-- `n`: number of nodes V
-- `edges`: edges between U and V
+- `m`: Number of nodes U.
+- `n`: Number of nodes V.
+- `edges`: Edges between U and V.
+- `groups`: Groups which nodes U belong to. The algorithm tries to maximize cardinality of chosen groups.
 - Returns an array of edges representing the matching.
 
 ## Example

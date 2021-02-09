@@ -4,7 +4,8 @@ const nil = -1;
 export default function findMatching(
   m: number, // number of nodes U
   n: number, // number of nodes V
-  edges: [number, number][] // edges between U and V
+  edges: [number, number][], // edges between U and V
+  groups?: number[] // groups which nodes U belong to. The algorithm tries to maximize cardinality of chosen groups.
 ): [number, number][] {
   const adj: number[][] = new Array(m).fill(undefined).map(() => []);
   edges.forEach(([u, v]) => {
@@ -39,11 +40,11 @@ export default function findMatching(
     return dists[nil + 1] !== inf;
   };
 
-  const dfs = (u: number, v?: number) => {
+  const dfs = (u: number) => {
     if (u !== nil) {
       for (const v of shuffle(adj[u])) {
         if (dists[vPair[v] + 1] === dists[u + 1] + 1) {
-          if (dfs(vPair[v], v)) {
+          if (dfs(vPair[v])) {
             vPair[v] = u;
             uPair[u] = v;
             return true;
@@ -56,12 +57,65 @@ export default function findMatching(
     return true;
   };
 
-  let matching = 0;
-  while (bfs()) {
-    for (const u of shuffle(Array(m).keys())) {
-      if (uPair[u] === nil) {
+  if (groups === undefined) {
+    while (bfs()) {
+      for (const u of shuffle(Array(m).keys())) {
+        if (uPair[u] === nil) {
+          dfs(u);
+        }
+      }
+    }
+  } else {
+    let gsByCount = [new Set(groups)];
+    const remainingUs = new Set(Array(m).keys());
+
+    while (bfs()) {
+      let scheduledGs: Set<number>;
+      let scheduledUs: number[] = [];
+      let lastCount = -1;
+
+      const unvisitedUsByGroup = Object.fromEntries(
+        [...new Set(groups)].map((g) => [g, new Set<number>()])
+      );
+      for (const u of remainingUs) {
+        unvisitedUsByGroup[groups[u]].add(u);
+      }
+
+      const pop = () => {
+        let u: number | undefined;
+        while (
+          (u = scheduledUs.shift()) === undefined ||
+          scheduledGs.size === 0
+        ) {
+          lastCount += 1;
+          const gs = gsByCount[lastCount];
+          if (gs === undefined) {
+            return undefined;
+          }
+          scheduledUs = shuffle(
+            [...gs].flatMap((g) => [...unvisitedUsByGroup[g]])
+          );
+          scheduledGs = gs;
+        }
+
+        if (scheduledGs.has(groups[u])) {
+          unvisitedUsByGroup[groups[u]].delete(u);
+          return u;
+        }
+      };
+
+      const match = (u: number) => {
+        const g = groups[u];
+        gsByCount[lastCount + 1] ??= new Set<number>();
+        gsByCount[lastCount + 1].add(g);
+        gsByCount[lastCount].delete(g);
+        scheduledGs.delete(g);
+        remainingUs.delete(u);
+      };
+
+      for (let u; (u = pop()) !== undefined; ) {
         if (dfs(u)) {
-          matching += 1;
+          match(u);
         }
       }
     }
